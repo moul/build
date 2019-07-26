@@ -1,8 +1,32 @@
 version: 2.1
 
 commands:
+  install_golangci-lint:
+    description: "Install golangci-lint"
+    parameters:
+      version:
+        type: string
+        default: "v1.15.0"
+    steps:
+      - install_retry
+      - install_curl
+      - run:
+          name: installing golangci-lint
+          command: /tmp/retry -m 3 curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s << parameters.version >>
+
+  install_curl:
+    description: "Install curl (if missing)"
+    steps:
+      - run:
+          name: installing curl
+          command: |
+            command -v curl &>/dev/null || (
+              apk add --no-cache curl || (apt update && apt install curl)
+            )
+            curl --version
+
   install_retry:
-    description: "Install moul.io/retry"
+    description: "Install moul.io/retry (if missing)"
     parameters:
       version:
         type: string
@@ -11,37 +35,46 @@ commands:
       - run:
           name: installing moul.io/retry
           command: |
-            command -v wget &>/dev/null && wget -O /tmp/retry "https://github.com/moul/retry/releases/download/<< parameters.version >>/retry_$(uname -s)_$(uname -m)" || true
-            if [ ! -f /tmp/retry ]; then command -v curl &>/dev/null && curl -L -o /tmp/retry "https://github.com/moul/retry/releases/download/<< parameters.version >>/retry_$(uname -s)_$(uname -m)"; fi
-            chmod +x /tmp/retry
+            if [ ! -f /tmp/retry ]; then
+              command -v wget &>/dev/null && wget -O /tmp/retry "https://github.com/moul/retry/releases/download/<< parameters.version >>/retry_$(uname -s)_$(uname -m)" || true
+              if [ ! -f /tmp/retry ]; then command -v curl &>/dev/null && curl -L -o /tmp/retry "https://github.com/moul/retry/releases/download/<< parameters.version >>/retry_$(uname -s)_$(uname -m)"; fi
+              chmod +x /tmp/retry
+            fi
             /tmp/retry --version
-
-"-": &dockerbuild
-  steps:
-    - install_retry:
-        version: "v0.5.0"
+  test_orb:
+    description: "Internal: testing the orb."
+    steps:
+      - install_retry:
+          version: "v0.5.0"
+      - install_retry
+      - install_golangci-lint:
+          version: "v1.15.0"
+      - install_golangci-lint
 
 jobs:
   test-circleci-node:
     docker:
       - image: circleci/node
-    <<: *dockerbuild
+    steps:
+      - test_orb
   test-circleci-golang:
     docker:
       - image: circleci/golang
-    <<: *dockerbuild
+    steps:
+      - test_orb
   test-circleci-python:
     docker:
       - image: circleci/python
-    <<: *dockerbuild
+    steps:
+      - test_orb
   test-alpine:
     docker:
       - image: alpine
-    <<: *dockerbuild
+    steps:
+      - test_orb
 
 workflows:
-  version: 2
-  test-all:
+  main:
     jobs:
       - test-circleci-node
       - test-circleci-golang
