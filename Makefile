@@ -1,4 +1,4 @@
-VERSION ?= dev:latest
+VERSION ?= `git describe --tags --abbrev=0 | sed s/^v//`
 
 .PHONY: validate
 validate:
@@ -6,4 +6,4 @@ validate:
 
 .PHONY: publish
 publish: validate
-	circleci orb publish .circleci/config.yml moul/build@${VERSION}
+	set -xe; circleci orb publish .circleci/config.yml moul/build@${VERSION}
