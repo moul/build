@@ -7,12 +7,23 @@ commands:
       version:
         type: string
         default: "v1.15.0"
+      sudo:
+        type: boolean
+        default: true
+      insecure:
+        type: boolean
+        default: false
     steps:
-      - install_retry
-      - install_curl
+      - install_retry:
+          sudo: << parameters.sudo >>
+          insecure: << parameters.insecure >>
       - run:
-          name: installing golangci-lint
-          command: /tmp/retry -m 3 curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s << parameters.version >>
+          name: "Installing golangci-lint"
+          command: |
+            command -v golangci-lint ^>/dev/null || (
+              dl --insecure="<< parameters.insecure >>" -o - https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | retry -m 3 sh -s << parameters.version >>
+              )
+              PATH=$PATH:bin golangci-lint --version
 
   install_curl:
     description: "Install curl (if missing)"
@@ -31,47 +42,63 @@ commands:
       version:
         type: string
         default: "v0.5.0"
+      sudo:
+        type: boolean
+        default: true
+      insecure:
+        type: boolean
+        default: false
     steps:
-      - run:
-          name: installing moul.io/retry
-          command: |
-            if [ ! -f /tmp/retry ]; then
-              command -v wget &>/dev/null && wget -O /tmp/retry "https://github.com/moul/retry/releases/download/<< parameters.version >>/retry_$(uname -s)_$(uname -m)" || true
-              if [ ! -f /tmp/retry ]; then command -v curl &>/dev/null && curl -L -o /tmp/retry "https://github.com/moul/retry/releases/download/<< parameters.version >>/retry_$(uname -s)_$(uname -m)"; fi
-              chmod +x /tmp/retry
-            fi
-            /tmp/retry --version
-  test_orb:
+      - dl/install:
+          url: "https://github.com/moul/retry/releases/download/<< parameters.version >>/retry_$(uname -s)_$(uname -m)"
+          sudo: << parameters.sudo >>
+          insecure: << parameters.insecure >>
+          output: retry
+      - run: retry --version
+
+  test:
     description: "Internal: testing the orb."
+    parameters:
+      sudo:
+        type: boolean
+        default: true
+      insecure:
+        type: boolean
+        default: false
     steps:
       - install_retry:
-          version: "v0.5.0"
-      - install_retry
+          sudo: << parameters.sudo >>
+          insecure: << parameters.insecure >>
       - install_golangci-lint:
-          version: "v1.15.0"
-      - install_golangci-lint
+          sudo: << parameters.sudo >>
+          insecure: << parameters.insecure >>
+
+orbs:
+  dl: moul/dl@1.6.0
 
 jobs:
   test-circleci-node:
     docker:
       - image: circleci/node
     steps:
-      - test_orb
+      - test
   test-circleci-golang:
     docker:
       - image: circleci/golang
     steps:
-      - test_orb
+      - test
   test-circleci-python:
     docker:
       - image: circleci/python
     steps:
-      - test_orb
+      - test
   test-alpine:
     docker:
       - image: alpine
     steps:
-      - test_orb
+      - test:
+          sudo: false
+          insecure: true
 
 workflows:
   main:
