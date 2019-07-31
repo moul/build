@@ -74,7 +74,7 @@ commands:
           insecure: << parameters.insecure >>
 
 orbs:
-  dl: moul/dl@1.6.0
+  dl: moul/dl@1.7.0
 
 jobs:
   test-circleci-node:
