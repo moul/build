@@ -9,17 +9,18 @@ commands:
         default: "v1.15.0"
       sudo:
         type: boolean
-        default: true
+        default: false
       insecure:
         type: boolean
         default: false
     steps:
-      - install_retry:
+      - retry/install:
           sudo: << parameters.sudo >>
           insecure: << parameters.insecure >>
       - run:
           name: "Installing golangci-lint"
           command: |
+            . ~/.profile
             command -v golangci-lint ^>/dev/null || (
               cd
               dl --insecure="<< parameters.insecure >>" -o - https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | retry -m 3 sh -s << parameters.version >>
@@ -38,47 +39,25 @@ commands:
             )
             curl --version
 
-  install_retry:
-    description: "Install moul.io/retry (if missing)"
-    parameters:
-      version:
-        type: string
-        default: "v0.5.0"
-      sudo:
-        type: boolean
-        default: true
-      insecure:
-        type: boolean
-        default: false
-    steps:
-      - dl/install:
-          url: "https://github.com/moul/retry/releases/download/<< parameters.version >>/retry_$(uname -s)_$(uname -m)"
-          sudo: << parameters.sudo >>
-          insecure: << parameters.insecure >>
-          output: retry
-      - run: retry --version
-
   test:
     description: "Internal: testing the orb."
     parameters:
       sudo:
         type: boolean
-        default: true
+        default: false
       insecure:
         type: boolean
         default: false
     steps:
-      - install_retry:
-          sudo: << parameters.sudo >>
-          insecure: << parameters.insecure >>
-      - run: retry --version
       - install_golangci-lint:
           sudo: << parameters.sudo >>
           insecure: << parameters.insecure >>
-      - run: golangci-lint --version
+      - run: retry --version
+      - run: . ~/.profile && golangci-lint --version
 
 orbs:
-  dl: moul/dl@1.6.0
+  dl: moul/dl@1.7.0
+  retry: moul/retry@0.6.0
 
 jobs:
   test-circleci-node:
@@ -101,7 +80,6 @@ jobs:
       - image: alpine
     steps:
       - test:
-          sudo: false
           insecure: true
 
 workflows:
