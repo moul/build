@@ -59,7 +59,7 @@ executors:
   golang:
     docker:
       - image: circleci/golang:<< parameters.tag >>
-    working_directory: << parameters.working_directory >>
+    working_directory: /go/src/<< parameters.gopkg >>
     environment:
       - CGO_ENABLED: << parameters.cgo-enabled >>
       - GO111MODULE: << parameters.go111module >>
@@ -72,12 +72,11 @@ executors:
         type: string
         default: '0'
       go111module:
-        type: string
+        type: enum
+        enum: ["on", "off", "auto"]
         default: "on"
-        description: '"on", "off", or "auto"'
-      working_directory:
+      gopkg:
         type: string
-        default: "$HOME/workspace"
   docker:
     docker:
       - image: docker:<< parameters.tag >>
@@ -89,19 +88,22 @@ executors:
 
 jobs:
   # exposed
-  golang-binary:
+  golang-build:
     executor:
       name: golang
       tag: << parameters.tag >>
       cgo-enabled: << parameters.cgo-enabled >>
       go111module: << parameters.go111module >>
-      working_directory: << parameters.working_directory >>
+      gopkg: << parameters.gopkg >>
     steps:
       - checkout
       - retry/install
       - tools/mod-download
       - tools/mod-tidy-check
-      - run: retry -m make install
+      - unless:
+          condition: << parameters.no-install >>
+          steps:
+            - run: retry -m make install
       - run: retry -m make unittest
       - install_golangci-lint
       - run: PATH=$PATH:$(pwd)/bin retry -m 3 make lint
@@ -112,48 +114,20 @@ jobs:
         type: string
         default: '1.12'
         description: See https://hub.docker.com/r/circleci/golang/tags
+      no-install:
+        type: boolean
+        default: false
+        description: "if true, won't run 'make install'"
       cgo-enabled:
         type: string
         default: '0'
       go111module:
-        type: string
+        type: enum
+        enum: ["on", "off", "auto"]
         default: "on"
-        description: '"on", "off", or "auto"'
-      working_directory:
+      gopkg:
         type: string
-        default: "$HOME/workspace"
-  golang-library:
-    executor:
-      name: golang
-      tag: << parameters.tag >>
-      cgo-enabled: << parameters.cgo-enabled >>
-      go111module: << parameters.go111module >>
-      working_directory: << parameters.working_directory >>
-    steps:
-      - checkout
-      - retry/install
-      - tools/mod-download
-      - tools/mod-tidy-check
-      - run: retry -m make unittest
-      - install_golangci-lint
-      - run: PATH=$PATH:$(pwd)/bin retry -m 3 make lint
-      - codecov/upload:
-          file: coverage.txt
-    parameters:
-      tag:
-        type: string
-        default: '1.12'
-        description: See https://hub.docker.com/r/circleci/golang/tags
-      cgo-enabled:
-        type: string
-        default: '0'
-      go111module:
-        type: string
-        default: "on"
-        description: '"on", "off", or "auto"'
-      working_directory:
-        type: string
-        default: "$HOME/workspace"
+        description: "your go package, i.e. moul.io/build or github.com/moul/build"
   docker-build:
     executor:
       name: docker
@@ -178,11 +152,14 @@ jobs:
       - image: circleci/node
     steps: ["test"]
   test-circleci-golang-112:
-    executor: golang
+    executor:
+      name: golang
+      gopkg: moul.io/build
     steps: ["test"]
   test-circleci-golang-111:
     executor:
       name: golang
+      gopkg: moul.io/build
       tag: "1.11"
     steps: ["test"]
   test-docker:
@@ -198,7 +175,6 @@ jobs:
     steps:
       - test:
           insecure: true
-
 
 orbs:
   dl: moul/dl@1.7.0
