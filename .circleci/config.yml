@@ -70,7 +70,7 @@ executors:
         description: See https://hub.docker.com/r/circleci/golang/tags
       cgo-enabled:
         type: string
-        default: '0'
+        default: '1'
       go111module:
         type: enum
         enum: ["on", "off", "auto"]
@@ -120,7 +120,7 @@ jobs:
         description: "if true, won't run 'make install'"
       cgo-enabled:
         type: string
-        default: '0'
+        default: '1'
       go111module:
         type: enum
         enum: ["on", "off", "auto"]
