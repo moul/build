@@ -55,37 +55,73 @@ commands:
       - run: retry --version
       - run: . ~/.profile && golangci-lint --version
 
-orbs:
-  dl: moul/dl@1.7.0
-  retry: moul/retry@0.6.0
+executors:
+  golang:
+    docker:
+      - image: circleci/golang:<< parameters.tag >>
+    working_directory: << parameters.working_directory >>
+    environment:
+      - CGO_ENABLED: << parameters.cgo-enabled >>
+      - GO111MODULE: << parameters.go111module >>
+    parameters:
+      tag:
+        type: string
+        default: '1.12'
+        description: See https://hub.docker.com/r/circleci/golang/tags
+      cgo-enabled:
+        type: string
+        default: '0'
+      go111module:
+        type: string
+        default: "on"
+        description: '"on", "off", or "auto"'
+      working_directory:
+        type: string
+        default: ""
+  docker:
+    docker:
+      - image: docker:<< parameters.tag >>
+    parameters:
+      tag:
+        type: string
+        default: 18.06.3-ce-git
+        description: "See https://hub.docker.com/_/docker?tab=tags"
 
 jobs:
   test-circleci-node:
     docker:
       - image: circleci/node
-    steps:
-      - test
-  test-circleci-golang:
-    docker:
-      - image: circleci/golang
-    steps:
-      - test
+    steps: ["test"]
+  test-circleci-golang-112:
+    executor: golang
+    steps: ["test"]
+  test-circleci-golang-111:
+    executor:
+      name: golang
+      tag: "1.11"
+    steps: ["test"]
+  test-docker:
+    executor: docker
+    steps: ["test"]
   test-circleci-python:
     docker:
       - image: circleci/python
-    steps:
-      - test
+    steps: ["test"]
   test-alpine:
     docker:
       - image: alpine
-    steps:
-      - test:
-          insecure: true
+    steps: ["test"]
+
+orbs:
+  dl: moul/dl@1.7.0
+  retry: moul/retry@0.6.0
 
 workflows:
   main:
     jobs:
       - test-circleci-node
-      - test-circleci-golang
+      - test-circleci-golang-112
+      - test-circleci-golang-111
+      - test-docker
       - test-circleci-python
       - test-alpine
