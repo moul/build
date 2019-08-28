@@ -90,7 +90,12 @@ executors:
 jobs:
   # exposed
   golang-binary:
-    executor: golang
+    executor:
+      name: golang
+      tag: << parameters.tag >>
+      cgo-enabled: << parameters.cgo-enabled >>
+      go111module: << parameters.go111module >>
+      working_directory: << parameters.working_directory >>
     steps:
       - checkout
       - retry/install
@@ -102,8 +107,28 @@ jobs:
       - run: PATH=$PATH:$(pwd)/bin retry -m 3 make lint
       - codecov/upload:
           file: coverage.txt
+    parameters:
+      tag:
+        type: string
+        default: '1.12'
+        description: See https://hub.docker.com/r/circleci/golang/tags
+      cgo-enabled:
+        type: string
+        default: '0'
+      go111module:
+        type: string
+        default: "on"
+        description: '"on", "off", or "auto"'
+      working_directory:
+        type: string
+        default: ""
   golang-library:
-    executor: golang
+    executor:
+      name: golang
+      tag: << parameters.tag >>
+      cgo-enabled: << parameters.cgo-enabled >>
+      go111module: << parameters.go111module >>
+      working_directory: << parameters.working_directory >>
     steps:
       - checkout
       - retry/install
@@ -114,8 +139,25 @@ jobs:
       - run: PATH=$PATH:$(pwd)/bin retry -m 3 make lint
       - codecov/upload:
           file: coverage.txt
+    parameters:
+      tag:
+        type: string
+        default: '1.12'
+        description: See https://hub.docker.com/r/circleci/golang/tags
+      cgo-enabled:
+        type: string
+        default: '0'
+      go111module:
+        type: string
+        default: "on"
+        description: '"on", "off", or "auto"'
+      working_directory:
+        type: string
+        default: ""
   docker-build:
-    executor: docker
+    executor:
+      name: docker
+      tag: << parameters.tag >>
     steps:
       - checkout
       - setup_remote_docker:
@@ -126,6 +168,10 @@ jobs:
     parameters:
       image:
         type: string
+      tag:
+        type: string
+        default: 18.06.3-ce-git
+        description: "See https://hub.docker.com/_/docker?tab=tags"
   # internal
   test-circleci-node:
     docker:
