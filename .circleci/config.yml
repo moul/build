@@ -88,6 +88,45 @@ executors:
         description: "See https://hub.docker.com/_/docker?tab=tags"
 
 jobs:
+  # exposed
+  golang-binary:
+    executor: golang
+    steps:
+      - checkout
+      - retry/install
+      - tools/mod-download
+      - tools/mod-tidy-check
+      - run: retry -m make install
+      - run: retry -m make unittest
+      - install_golangci-lint
+      - run: PATH=$PATH:$(pwd)/bin retry -m 3 make lint
+      - codecov/upload:
+          file: coverage.txt
+  golang-library:
+    executor: golang
+    steps:
+      - checkout
+      - retry/install
+      - tools/mod-download
+      - tools/mod-tidy-check
+      - run: retry -m make unittest
+      - install_golangci-lint
+      - run: PATH=$PATH:$(pwd)/bin retry -m 3 make lint
+      - codecov/upload:
+          file: coverage.txt
+  docker-build:
+    executor: docker
+    steps:
+      - checkout
+      - setup_remote_docker:
+          docker_layer_caching: true
+      - docker/build:
+          image: << parameters.image >>
+      #- docker/dockerlint
+    parameters:
+      image:
+        type: string
+  # internal
   test-circleci-node:
     docker:
       - image: circleci/node
@@ -110,11 +149,17 @@ jobs:
   test-alpine:
     docker:
       - image: alpine
-    steps: ["test"]
+    steps:
+      - test:
+          insecure: true
+
 
 orbs:
   dl: moul/dl@1.7.0
   retry: moul/retry@0.6.0
+  codecov: codecov/codecov@1.0.5
+  docker: circleci/docker@0.5.13
+  tools: gotest/tools@0.0.10
 
 workflows:
   main:
