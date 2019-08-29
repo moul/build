@@ -10,6 +10,10 @@
 <!--[![Go Report Card](https://goreportcard.com/badge/moul.io/build)](https://goreportcard.com/report/moul.io/build)-->
 <!--[![Docker Metrics](https://images.microbadger.com/badges/image/moul/build.svg)](https://microbadger.com/images/moul/build)-->
 
+## Documentation
+
+See https://circleci.com/orbs/registry/orb/moul/build
+
 ## Usage
 
 This repo can be used as an **Orb** on CircleCI (see https://circleci.com/docs/2.0/jobs-steps/ for more details).
