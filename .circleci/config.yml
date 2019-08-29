@@ -100,6 +100,10 @@ jobs:
       - retry/install
       - tools/mod-download
       - tools/mod-tidy-check
+      - when:
+          condition: << parameters.prepare-build >>
+          steps:
+            - run: << parameters.prepare-build >>
       - unless:
           condition: << parameters.no-install >>
           steps:
@@ -128,6 +132,10 @@ jobs:
       gopkg:
         type: string
         description: "your go package, i.e. moul.io/build or github.com/moul/build"
+      prepare-build:
+        type: string
+        default: ''
+        description: 'if set, this command will be run before running install and test commands'
   docker-build:
     executor:
       name: docker
