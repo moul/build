@@ -150,6 +150,7 @@ jobs:
     parameters:
       image:
         type: string
+        default: 'tmp'
       tag:
         type: string
         default: 18.06.3-ce-git
