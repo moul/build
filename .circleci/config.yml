@@ -55,6 +55,36 @@ commands:
       - run: retry --version
       - run: . ~/.profile && golangci-lint --version
 
+  mod-download:
+    description: |
+      Restore and update the Go module cache (adapted from gotest/tools)
+    parameters:
+      prefix:
+        type: string
+        default: go-mod-v1
+        description: Prefix for the cache key.
+      path:
+        type: string
+        default: /go/pkg/mod
+        description: Path to the go module directory to store in the cache.
+    steps:
+      - install:
+          package: git
+      - restore_cache:
+          name: Restore go module cache
+          keys:
+            - '<< parameters.prefix >>-{{ arch }}-{{ checksum "go.sum" }}'
+            #- '<< parameters.prefix >>-{{ arch }}-'
+      - run:
+          environment:
+            GO111MODULE: 'on'
+          command: go mod download
+      - save_cache:
+          name: Save go module cache
+          key: '<< parameters.prefix >>-{{ arch }}-{{ checksum "go.sum" }}'
+          paths:
+            - << parameters.path >>
+
 executors:
   golang:
     docker:
@@ -98,7 +128,7 @@ jobs:
     steps:
       - checkout
       - retry/install
-      - tools/mod-download
+      - mod-download
       - tools/mod-tidy-check
       - when:
           condition: << parameters.prepare-build >>
