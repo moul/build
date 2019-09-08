@@ -21,12 +21,18 @@ commands:
           name: "Installing golangci-lint"
           command: |
             . ~/.profile
-            command -v golangci-lint ^>/dev/null || (
-              cd
-              dl --insecure="<< parameters.insecure >>" -o - https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | retry -m 3 sh -s << parameters.version >>
-              echo "export PATH=~/bin:$PATH" >> $BASH_ENV
+            command -v golangci-lint >/dev/null || (
+              go version | grep -q go1.13 && (
+                # temporary fix: https://github.com/golangci/golangci-lint/issues/663
+                GO111MODULE=off go get -u github.com/golangci/golangci-lint/cmd/golangci-lint
+              ) || (
+                cd
+                dl --insecure="<< parameters.insecure >>" -o - https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | retry -m 3 sh -s << parameters.version >>
+                echo "export PATH=~/bin:$PATH" >> $BASH_ENV
+              )
             )
-            PATH=${HOME}/bin golangci-lint --version
+            PATH=${PATH}:${HOME}/bin golangci-lint
+            PATH=${PATH}:${HOME}/bin golangci-lint --version || true
 
   install_curl:
     description: "Install curl (if missing)"
@@ -53,7 +59,16 @@ commands:
           sudo: << parameters.sudo >>
           insecure: << parameters.insecure >>
       - run: retry --version
-      - run: . ~/.profile && golangci-lint --version
+      - run: . ~/.profile && golangci-lint
+      - run:
+          name: "Testing golangci-lint"
+          command: |
+            . ~/.profile
+            if command -v go >/dev/null; then
+              GO111MODULE=off go get moul.io/otp
+              cd ${GOPATH}/src/moul.io/otp
+              golangci-lint run --verbose
+            fi
 
   mod-download:
     description: |
@@ -237,6 +252,7 @@ workflows:
   main:
     jobs:
       - test-circleci-node
+      - test-circleci-golang-113
       - test-circleci-golang-112
       - test-circleci-golang-111
       - test-docker
