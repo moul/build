@@ -6,7 +6,7 @@ commands:
     parameters:
       version:
         type: string
-        default: "v1.15.0"
+        default: "v1.17.1"
       sudo:
         type: boolean
         default: false
@@ -181,7 +181,7 @@ jobs:
         default: 'tmp'
       tag:
         type: string
-        default: 18.06.3-ce-git
+        default: 19.03.2-git
         description: "See https://hub.docker.com/_/docker?tab=tags"
   # internal
   test-circleci-node:
