@@ -139,7 +139,8 @@ jobs:
       go111module: << parameters.go111module >>
       gopkg: << parameters.gopkg >>
     steps:
-      - checkout
+      - checkout:
+          path: << parameters.checkout-path >>
       - retry/install
       - mod-download
       - tools/mod-tidy-check
@@ -161,6 +162,9 @@ jobs:
         type: string
         default: '1.13'
         description: See https://hub.docker.com/r/circleci/golang/tags
+      checkout-path:
+        type: string
+        default: '.'
       no-install:
         type: boolean
         default: false
@@ -184,7 +188,8 @@ jobs:
       name: docker
       tag: << parameters.tag >>
     steps:
-      - checkout
+      - checkout:
+          path: << parameters.checkout-path >>
       - setup_remote_docker:
           docker_layer_caching: true
       - docker/build:
@@ -194,6 +199,9 @@ jobs:
       image:
         type: string
         default: 'tmp'
+      checkout-path:
+        type: string
+        default: '.'
       tag:
         type: string
         default: 19.03.2-git
