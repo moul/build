@@ -6,7 +6,7 @@ commands:
     parameters:
       version:
         type: string
-        default: "v1.17.1"
+        default: "v1.23.6"
       sudo:
         type: boolean
         default: false
