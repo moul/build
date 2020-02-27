@@ -109,7 +109,7 @@ executors:
     parameters:
       tag:
         type: string
-        default: '1.13'
+        default: '1.14'
         description: See https://hub.docker.com/r/circleci/golang/tags
       cgo-enabled:
         type: string
@@ -160,7 +160,7 @@ jobs:
     parameters:
       tag:
         type: string
-        default: '1.13'
+        default: '1.14'
         description: See https://hub.docker.com/r/circleci/golang/tags
       checkout-path:
         type: string
@@ -217,6 +217,12 @@ jobs:
       name: golang
       gopkg: moul.io/build
     steps: ["test"]
+  test-circleci-golang-114:
+    executor:
+      name: golang
+      gopkg: moul.io/build
+      tag: "1.14"
+    steps: ["test"]
   test-circleci-golang-113:
     executor:
       name: golang
@@ -250,16 +256,18 @@ jobs:
           insecure: true
 
 orbs:
-  dl: moul/dl@1.7.0
-  retry: moul/retry@0.6.0
+  dl:      moul/dl@1.7.0
+  retry:   moul/retry@0.6.0
   codecov: codecov/codecov@1.0.5
-  docker: circleci/docker@0.5.13
-  tools: gotest/tools@0.0.10
+  docker:  circleci/docker@0.5.13
+  tools:   gotest/tools@0.0.10
 
 workflows:
   main:
     jobs:
       - test-circleci-node
+      - test-circleci-golang-latest
+      - test-circleci-golang-114
       - test-circleci-golang-113
       - test-circleci-golang-112
       - test-circleci-golang-111
