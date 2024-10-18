@@ -258,8 +258,8 @@ jobs:
 orbs:
   dl:      moul/dl@1.7.0
   retry:   moul/retry@0.6.0
-  codecov: codecov/codecov@3.2.0
-  docker:  circleci/docker@0.5.13
+  codecov: codecov/codecov@5.0.0
+  docker:  circleci/docker@2.8.0
   tools:   gotest/tools@0.0.10
 
 workflows:
